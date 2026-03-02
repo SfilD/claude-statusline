@@ -9,7 +9,7 @@ model_name=$(echo "$input" | jq -r '.model.display_name')
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // 0')
 context_size=$(echo "$input" | jq -r '.context_window.context_window_size // 200000')
 transcript=$(echo "$input" | jq -r '.transcript_path')
-mcps=$(echo "$input" | jq -r '.mcpServers // [] | length')
+mcps=$(find "$HOME/.claude/plugins/cache" -name ".mcp.json" -exec cat {} + 2>/dev/null | jq -s '[.[] | keys[]] | length' 2>/dev/null || echo 0)
 
 # === Git branch ===
 cd "$current_dir" 2>/dev/null || cd "$project_dir" 2>/dev/null

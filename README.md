@@ -177,6 +177,28 @@ If you use an API key without OAuth:
 # usage_data=$(get_usage)
 ```
 
+## Update
+
+**macOS / Linux / WSL:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/SfilD/claude-statusline/main/statusline.sh \
+  -o ~/.claude/statusline.sh
+```
+
+**Windows (PowerShell 7):**
+
+```powershell
+curl.exe -fsSL https://raw.githubusercontent.com/SfilD/claude-statusline/main/statusline.sh `
+  -o "$env:USERPROFILE\.claude\statusline.sh"
+
+(Get-Content "$env:USERPROFILE\.claude\statusline.sh" -Raw) `
+  -replace 'python3', 'python' |
+  Set-Content "$env:USERPROFILE\.claude\statusline.sh" -NoNewline
+```
+
+No restart required — the script runs on every assistant message.
+
 ## Uninstall
 
 ```bash

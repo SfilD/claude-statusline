@@ -260,6 +260,28 @@ bar_len=10  # по умолчанию 6
 # usage_data=$(get_usage)
 ```
 
+## Обновление
+
+**macOS / Linux / WSL:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/SfilD/claude-statusline/main/statusline.sh \
+  -o ~/.claude/statusline.sh
+```
+
+**Windows (PowerShell 7):**
+
+```powershell
+curl.exe -fsSL https://raw.githubusercontent.com/SfilD/claude-statusline/main/statusline.sh `
+  -o "$env:USERPROFILE\.claude\statusline.sh"
+
+(Get-Content "$env:USERPROFILE\.claude\statusline.sh" -Raw) `
+  -replace 'python3', 'python' |
+  Set-Content "$env:USERPROFILE\.claude\statusline.sh" -NoNewline
+```
+
+Перезапуск не нужен — скрипт запускается при каждом сообщении ассистента.
+
 ## Удаление
 
 ```bash

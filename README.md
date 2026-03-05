@@ -132,6 +132,7 @@ If nothing prints, run `claude login` to re-authenticate.
 | Shows `H:?% W:?%` | API error — token may be expired, run `claude login` |
 | Numbers seem stuck | Cache is active (2 min) — wait or `rm ~/.claude/.usage-cache.json` |
 | Script won't run | Check `jq`: `echo '{}'\| jq .` — install if missing |
+| Session time wrong on Windows | Ensure transcript path has no backslashes — script converts them via `sed` |
 
 ---
 

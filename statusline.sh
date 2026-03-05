@@ -14,7 +14,7 @@ mcps=$(find "$HOME/.claude/plugins/cache" -name ".mcp.json" -exec cat {} + 2>/de
 # === Git branch ===
 cd "$current_dir" 2>/dev/null || cd "$project_dir" 2>/dev/null
 branch=$(git -c core.useReplaceRefs=false -c gc.auto=0 branch --show-current 2>/dev/null)
-project="$current_dir"
+project=$(basename "$current_dir")
 
 # === Session time ===
 if [ -f "$transcript" ]; then

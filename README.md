@@ -1,335 +1,4 @@
-<h1 align="center">claude-statusline</h1>
-
-<p align="center">
-  Информативная строка состояния для Claude Code — модель, контекст, лимиты, git, время сессии.<br>
-  Кроссплатформенная. Одна команда для установки.
-</p>
-
-<p align="center">
-  <a href="https://github.com/AndyShaman/claude-statusline/blob/main/LICENSE"><img src="https://img.shields.io/github/license/AndyShaman/claude-statusline?style=flat-square&color=green" alt="License"></a>
-  <img src="https://img.shields.io/badge/bash-script-4EAA25?style=flat-square&logo=gnubash&logoColor=white" alt="Bash">
-  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-blue?style=flat-square" alt="Platform">
-  <a href="https://github.com/AndyShaman/claude-statusline/stargazers"><img src="https://img.shields.io/github/stars/AndyShaman/claude-statusline?style=flat-square&color=yellow" alt="Stars"></a>
-</p>
-
-<p align="center">
-  <a href="https://t.me/AI_Handler"><img src="https://img.shields.io/badge/Telegram-канал автора-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram"></a>
-  &nbsp;
-  <a href="https://www.youtube.com/channel/UCLkP6wuW_P2hnagdaZMBtCw"><img src="https://img.shields.io/badge/YouTube-канал автора-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube"></a>
-</p>
-
----
-
-<p align="center">
-  <img src="screenshot.jpg" alt="statusline screenshot">
-</p>
-
-## Что показывает
-
-| Сегмент | Пример | Описание |
-|---------|--------|----------|
-| Модель | `[Opus 4.6]` | Текущая модель |
-| Контекст | `━━━━━━ 25% (50K/200K)` | Прогресс-бар использования контекста с цветовой индикацией |
-| 5-часовой лимит | `H:78% 1h34m` | Остаток квоты за скользящие 5 часов + время до сброса |
-| Недельный лимит | `W:87%` | Остаток квоты за скользящие 7 дней |
-| Проект | `my-app` | Имя текущей директории |
-| Git-ветка | `git:(main)` | Активная ветка (скрыта вне git-репозиториев) |
-| MCP-серверы | `3 MCPs` | Количество подключённых MCP-серверов, считывается из кэша плагинов (скрыто при 0) |
-| Время сессии | `⏱ 12m` | Продолжительность текущей сессии (birth time файла транскрипта) |
-
-Цветовая кодировка лимитов: 🟢 > 50% — 🟡 20–50% — 🔴 < 20%.
-
-## Установка
-
-### Быстрая (из GitHub)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/SfilD/claude-statusline/main/install.sh | bash
-```
-
-### Ручная
-
-```bash
-# 1. Скачайте скрипт
-curl -fsSL https://raw.githubusercontent.com/SfilD/claude-statusline/main/statusline.sh -o ~/.claude/statusline.sh
-chmod +x ~/.claude/statusline.sh
-
-# 2. Добавьте в ~/.claude/settings.json (или создайте файл):
-```
-
-```json
-{
-  "statusLine": {
-    "type": "command",
-    "command": "bash ~/.claude/statusline.sh"
-  }
-}
-```
-
-```bash
-# 3. Перезапустите Claude Code
-```
-
-### Из архива
-
-```bash
-unzip claude-statusline.zip
-cd claude-statusline
-bash install.sh
-```
-
-## Зависимости
-
-| Пакет | Назначение | macOS | Linux | Windows |
-|-------|-----------|-------|-------|---------|
-| `jq` | Парсинг JSON | `brew install jq` | `sudo apt install jq` | `winget install jq` |
-| `python3` | Расчёт времени | предустановлен | предустановлен | `winget install python` |
-| `curl` | Запрос к API | предустановлен | предустановлен | встроен в Git Bash |
-
-## Как работает
-
-Claude Code запускает скрипт после каждого сообщения ассистента, передавая на stdin JSON с данными сессии (модель, контекст, пути, MCP-серверы). Скрипт парсит JSON, получает лимиты из API и выводит форматированную строку с ANSI-цветами.
-
----
-
-## Лимиты использования — `H:` и `W:`
-
-Сегменты `H:78% 1h34m` и `W:87%` показывают остаток вашей квоты Claude Code (Pro/Max подписки).
-
-| Лимит | Расшифровка |
-|-------|-------------|
-| **H** (hourly) | Квота за скользящее 5-часовое окно. Сбрасывается постепенно. |
-| **W** (weekly) | Квота за скользящее 7-дневное окно. Сбрасывается постепенно. |
-
-Процент — это **остаток** (100% = полная ёмкость, 0% = лимит достигнут). Время после `H:` — когда окно полностью обновится.
-
-### Как скрипт получает данные
-
-```
-┌─────────────────────┐     ┌──────────────────────┐     ┌─────────────────────┐
-│ 1. OAUTH-ТОКЕН      │────▶│ 2. ЗАПРОС К API      │────▶│ 3. ПАРСИНГ          │
-│                     │     │                      │     │                     │
-│ Чтение из защищён-  │     │ GET /api/oauth/usage │     │ remaining = 100 -   │
-│ ного хранилища ОС   │     │ Bearer <token>       │     │   utilization       │
-│ (Keychain / Keyring │     │ Кэш на 2 минуты      │     │ Цвет по уровню      │
-│  / Credential Mgr)  │     │                      │     │ Время до сброса     │
-└─────────────────────┘     └──────────────────────┘     └─────────────────────┘
-```
-
-**Шаг 1** — Когда вы входите через `claude login`, Claude Code сохраняет OAuth-токен в защищённое хранилище ОС. Скрипт читает его обратно:
-
-```json
-{
-  "claudeAiOauth": {
-    "accessToken": "coa-abc123...",
-    "refreshToken": "...",
-    "expiresAt": "..."
-  }
-}
-```
-
-**Шаг 2** — Запрос к API Anthropic:
-
-```bash
-curl -sf "https://api.anthropic.com/api/oauth/usage" \
-    -H "Authorization: Bearer $token" \
-    -H "anthropic-beta: oauth-2025-04-20"
-```
-
-**Ответ API:**
-
-```json
-{
-  "five_hour": {
-    "utilization": 22.5,
-    "resets_at": "2026-02-28T12:30:00Z"
-  },
-  "seven_day": {
-    "utilization": 13.2,
-    "resets_at": "2026-03-01T00:00:00Z"
-  }
-}
-```
-
-- `utilization` — процент **использованной** квоты (0–100)
-- `resets_at` — ISO 8601 время полного сброса окна
-
-**Шаг 3** — Расчёт: `remaining = 100 - utilization`, вычисление оставшегося времени, выбор цвета.
-
-**Кэширование** — API вызывается не чаще раза в 2 минуты. Кэш: `~/.claude/.usage-cache.json` (права 600).
-
----
-
-## Настройка по платформам
-
-Скрипт автоматически определяет ОС и использует нужный способ чтения токена. Ниже — детали для каждой платформы.
-
-### macOS
-
-**Работает из коробки.** Токен хранится в **Keychain Access** (связка ключей).
-
-```bash
-# Команда, которую использует скрипт:
-security find-generic-password -s "Claude Code-credentials" -w
-```
-
-Проверить вручную:
-
-```bash
-security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null \
-  | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK — token expires:', d['claudeAiOauth'].get('expiresAt', '?'))"
-```
-
-### Linux
-
-Скрипт сначала проверяет файл `~/.claude/.credentials.json` (используется Claude Code в WSL и headless-окружениях). Если файла нет — читает токен через **libsecret** (GNOME Keyring / KWallet).
-
-```bash
-# Проверить файловые креденшалы:
-cat ~/.claude/.credentials.json 2>/dev/null \
-  | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK — token expires:', d['claudeAiOauth'].get('expiresAt', '?'))"
-```
-
-Если файла нет — установите `secret-tool` для keyring:
-
-```bash
-# Ubuntu / Debian
-sudo apt install libsecret-tools
-
-# Fedora
-sudo dnf install libsecret
-
-# Arch
-sudo pacman -S libsecret
-```
-
-```bash
-# Проверить через keyring:
-secret-tool lookup service "Claude Code-credentials" 2>/dev/null \
-  | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK — token expires:', d['claudeAiOauth'].get('expiresAt', '?'))"
-```
-
-### Windows — Git Bash / MSYS2
-
-Токен хранится в **Windows Credential Manager**. Скрипт читает его через PowerShell.
-
-Скрипт сначала проверяет файл `~/.claude/.credentials.json`. Если файла нет — читает токен из **Windows Credential Manager** через PowerShell.
-
-Для чтения через Credential Manager требуется PowerShell-модуль:
-
-```powershell
-# Запустите PowerShell от администратора:
-Install-Module -Name CredentialManager -Force
-```
-
-```bash
-# Команда, которую использует скрипт (из Git Bash):
-powershell.exe -NoProfile -Command \
-  '[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String((Get-StoredCredential -Target "Claude Code-credentials" -AsCredentialObject).Password))'
-```
-
-Проверить вручную (из Git Bash):
-
-```bash
-powershell.exe -NoProfile -Command \
-  '[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String((Get-StoredCredential -Target "Claude Code-credentials" -AsCredentialObject).Password))' 2>/dev/null \
-  | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK — token found')"
-```
-
-**Без модуля `CredentialManager`** — проверьте файловый fallback:
-
-```bash
-cat "$APPDATA/claude/.credentials" 2>/dev/null \
-  || cat "$LOCALAPPDATA/claude/.credentials" 2>/dev/null
-```
-
-### Windows — WSL
-
-В WSL Claude Code хранит токен в файле `~/.claude/.credentials.json` (не в libsecret и не в Credential Manager). Скрипт читает его автоматически — **дополнительная настройка не требуется**.
-
-Проверить вручную:
-
-```bash
-cat ~/.claude/.credentials.json 2>/dev/null \
-  | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK — token expires:', d['claudeAiOauth'].get('expiresAt', '?'))"
-```
-
-### Устранение проблем
-
-| Симптом | Решение |
-|---------|---------|
-| `H:` и `W:` не отображаются | Токен не найден — проверьте инструкции для вашей платформы |
-| Показывает `H:?% W:?%` | API вернул ошибку — токен мог истечь, выполните `claude login` |
-| Числа не обновляются | Кэш (2 мин) — подождите или удалите `~/.claude/.usage-cache.json` |
-| Скрипт не запускается | Проверьте `jq`: `echo '{}' \| jq .` — если ошибка, установите jq |
-
-Принудительное обновление:
-
-```bash
-rm ~/.claude/.usage-cache.json
-# Следующее сообщение в Claude Code вызовет свежий запрос к API
-```
-
----
-
-## Кастомизация
-
-Редактируйте `~/.claude/statusline.sh` или используйте встроенную команду Claude Code:
-
-```
-/statusline add cost tracking
-/statusline remove git branch
-/statusline show only model and context
-```
-
-### Стиль прогресс-бара
-
-```bash
-# Линии (по умолчанию)
-bar+="━"
-
-# Блоки
-bar+="█" / bar+="░"
-
-# Точки
-bar+="●" / bar+="○"
-```
-
-### Ширина прогресс-бара
-
-```bash
-bar_len=10  # по умолчанию 6
-```
-
-### Убрать сегмент
-
-Закомментируйте соответствующую строку `parts+=()` в конце скрипта.
-
-### Отключить лимиты
-
-Если вы используете API-ключ без OAuth:
-
-```bash
-# Закомментируйте строку ~120:
-# usage_data=$(get_usage)
-```
-
-## Удаление
-
-```bash
-rm ~/.claude/statusline.sh ~/.claude/.usage-cache.json
-# Удалите ключ "statusLine" из ~/.claude/settings.json
-```
-
-Или внутри Claude Code: `/statusline remove it`
-
-## Лицензия
-
-[MIT](LICENSE)
-
-**[@AndyShaman](https://github.com/AndyShaman)** · [claude-statusline](https://github.com/AndyShaman/claude-statusline)
-
----
+[![English](https://img.shields.io/badge/lang-English-blue.svg)](README.md) [![Русский](https://img.shields.io/badge/lang-Русский-red.svg)](README.ru.md)
 
 <h1 align="center">claude-statusline</h1>
 
@@ -339,12 +8,17 @@ rm ~/.claude/statusline.sh ~/.claude/.usage-cache.json
 </p>
 
 <p align="center">
-  <a href="https://t.me/AI_Handler"><img src="https://img.shields.io/badge/Telegram-Author's_Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram"></a>
-  &nbsp;
-  <a href="https://www.youtube.com/channel/UCLkP6wuW_P2hnagdaZMBtCw"><img src="https://img.shields.io/badge/YouTube-Author's_Channel-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube"></a>
+  <a href="https://github.com/SfilD/claude-statusline/blob/main/LICENSE"><img src="https://img.shields.io/github/license/SfilD/claude-statusline?style=flat-square&color=green" alt="License"></a>
+  <img src="https://img.shields.io/badge/bash-script-4EAA25?style=flat-square&logo=gnubash&logoColor=white" alt="Bash">
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-blue?style=flat-square" alt="Platform">
+  <a href="https://github.com/SfilD/claude-statusline/stargazers"><img src="https://img.shields.io/github/stars/SfilD/claude-statusline?style=flat-square&color=yellow" alt="Stars"></a>
 </p>
 
 ---
+
+<p align="center">
+  <img src="screenshot.jpg" alt="statusline screenshot">
+</p>
 
 ## What it shows
 
@@ -397,7 +71,13 @@ Restart Claude Code.
 | `python3` | Time calculations | preinstalled | preinstalled | `winget install python` |
 | `curl` | API requests | preinstalled | preinstalled | included in Git Bash |
 
-## How usage limits work (`H:` and `W:`)
+## How it works
+
+Claude Code runs the script after each assistant message, piping a JSON payload on stdin (model, context, paths, MCP servers). The script parses the JSON, fetches usage limits from the API, and outputs a formatted string with ANSI colors.
+
+---
+
+## Usage limits — `H:` and `W:`
 
 The `H:78% 1h34m` and `W:87%` segments show remaining Claude Code rate limit quota (Pro/Max subscriptions).
 
@@ -410,7 +90,7 @@ Percentage shows **remaining** capacity (100% = full, 0% = limit reached). Time 
 
 ### How it works under the hood
 
-1. **Read OAuth token** from OS credential storage (Keychain / libsecret / Credential Manager)
+1. **Read OAuth token** from OS credential storage (Keychain / credentials file / Credential Manager)
 2. **Call** `GET https://api.anthropic.com/api/oauth/usage` with `Bearer <token>`
 3. **Calculate** `remaining = 100 - utilization`, format time until reset
 4. **Cache** results for 2 minutes at `~/.claude/.usage-cache.json`
@@ -420,15 +100,11 @@ Percentage shows **remaining** capacity (100% = full, 0% = limit reached). Time 
 | Platform | Storage | Command |
 |----------|---------|---------|
 | **macOS** | Keychain Access | `security find-generic-password -s "Claude Code-credentials" -w` |
-| **Linux** | libsecret (GNOME Keyring / KWallet) | `secret-tool lookup service "Claude Code-credentials"` |
-| **Windows** (Git Bash) | Credential Manager | `powershell.exe ... Get-StoredCredential -Target "Claude Code-credentials"` |
-| **WSL** | Credentials file | `cat ~/.claude/.credentials.json` |
+| **Linux** | `~/.claude/.credentials.json` → libsecret fallback | `cat ~/.claude/.credentials.json` |
+| **Windows** (Git Bash) | `~/.claude/.credentials.json` → Credential Manager fallback | `cat ~/.claude/.credentials.json` |
+| **WSL** | `~/.claude/.credentials.json` | `cat ~/.claude/.credentials.json` |
 
-> **Linux**: script checks `~/.claude/.credentials.json` first, then falls back to `secret-tool` (requires `sudo apt install libsecret-tools`)
->
-> **Windows**: script checks `~/.claude/.credentials.json` first, then falls back to Credential Manager (requires `Install-Module -Name CredentialManager -Force`)
->
-> **WSL**: Claude Code stores the token in `~/.claude/.credentials.json` — no additional setup needed
+> **Linux / Windows / WSL**: the script checks `~/.claude/.credentials.json` first (used by Claude Code in WSL and headless environments). If the file is absent, it falls back to libsecret (`sudo apt install libsecret-tools`) on Linux or Credential Manager (`Install-Module -Name CredentialManager -Force`) on Windows.
 
 Verify your token is accessible:
 
@@ -437,13 +113,12 @@ Verify your token is accessible:
 security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null \
   | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK')"
 
-# Linux
-secret-tool lookup service "Claude Code-credentials" 2>/dev/null \
+# Linux / WSL / Windows (Git Bash)
+cat ~/.claude/.credentials.json 2>/dev/null \
   | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK')"
 
-# Windows (Git Bash)
-powershell.exe -NoProfile -Command \
-  '[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String((Get-StoredCredential -Target "Claude Code-credentials" -AsCredentialObject).Password))' 2>/dev/null \
+# Linux fallback (libsecret)
+secret-tool lookup service "Claude Code-credentials" 2>/dev/null \
   | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK')"
 ```
 
@@ -456,6 +131,9 @@ If nothing prints, run `claude login` to re-authenticate.
 | `H:` and `W:` missing | Token not found — verify with commands above |
 | Shows `H:?% W:?%` | API error — token may be expired, run `claude login` |
 | Numbers seem stuck | Cache is active (2 min) — wait or `rm ~/.claude/.usage-cache.json` |
+| Script won't run | Check `jq`: `echo '{}'\| jq .` — install if missing |
+
+---
 
 ## Customization
 
@@ -467,16 +145,47 @@ Edit `~/.claude/statusline.sh` directly, or use inside Claude Code:
 /statusline show only model and context
 ```
 
+### Progress bar style
+
+```bash
+# Lines (default)
+bar+="━"
+
+# Blocks
+bar+="█" / bar+="░"
+
+# Dots
+bar+="●" / bar+="○"
+```
+
+### Bar width
+
+```bash
+bar_len=10  # default: 6
+```
+
+### Remove a segment
+
+Comment out the corresponding `parts+=()` line at the end of the script.
+
+### Disable usage limits
+
+If you use an API key without OAuth:
+
+```bash
+# Comment out line ~120:
+# usage_data=$(get_usage)
+```
+
 ## Uninstall
 
 ```bash
 rm ~/.claude/statusline.sh ~/.claude/.usage-cache.json
+# Remove the "statusLine" key from ~/.claude/settings.json
 ```
 
-Remove the `statusLine` key from `~/.claude/settings.json`.
+Or inside Claude Code: `/statusline remove it`
 
 ## License
 
-[MIT](LICENSE)
-
-**[@AndyShaman](https://github.com/AndyShaman)** · [claude-statusline](https://github.com/AndyShaman/claude-statusline)
+[MIT](LICENSE) — based on [AndyShaman/claude-statusline](https://github.com/AndyShaman/claude-statusline)

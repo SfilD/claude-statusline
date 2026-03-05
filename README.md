@@ -34,8 +34,8 @@
 | Недельный лимит | `W:87%` | Остаток квоты за скользящие 7 дней |
 | Проект | `my-app` | Имя текущей директории |
 | Git-ветка | `git:(main)` | Активная ветка (скрыта вне git-репозиториев) |
-| MCP-серверы | `3 MCPs` | Количество подключённых MCP-серверов (скрыто при 0) |
-| Время сессии | `⏱ 12m` | Продолжительность текущей сессии |
+| MCP-серверы | `3 MCPs` | Количество подключённых MCP-серверов, считывается из кэша плагинов (скрыто при 0) |
+| Время сессии | `⏱ 12m` | Продолжительность текущей сессии (birth time файла транскрипта) |
 
 Цветовая кодировка лимитов: 🟢 > 50% — 🟡 20–50% — 🔴 < 20%.
 
@@ -44,14 +44,14 @@
 ### Быстрая (из GitHub)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AndyShaman/claude-statusline/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/SfilD/claude-statusline/main/install.sh | bash
 ```
 
 ### Ручная
 
 ```bash
 # 1. Скачайте скрипт
-curl -fsSL https://raw.githubusercontent.com/AndyShaman/claude-statusline/main/statusline.sh -o ~/.claude/statusline.sh
+curl -fsSL https://raw.githubusercontent.com/SfilD/claude-statusline/main/statusline.sh -o ~/.claude/statusline.sh
 chmod +x ~/.claude/statusline.sh
 
 # 2. Добавьте в ~/.claude/settings.json (или создайте файл):
@@ -82,7 +82,7 @@ bash install.sh
 
 | Пакет | Назначение | macOS | Linux | Windows |
 |-------|-----------|-------|-------|---------|
-| `jq` | Парсинг JSON | `brew install jq` | `sudo apt install jq` | встроен в Git Bash |
+| `jq` | Парсинг JSON | `brew install jq` | `sudo apt install jq` | `winget install jq` |
 | `python3` | Расчёт времени | предустановлен | предустановлен | `winget install python` |
 | `curl` | Запрос к API | предустановлен | предустановлен | встроен в Git Bash |
 
@@ -182,9 +182,15 @@ security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null \
 
 ### Linux
 
-Токен хранится через **libsecret** (GNOME Keyring / KWallet). Скрипт читает его через `secret-tool`.
+Скрипт сначала проверяет файл `~/.claude/.credentials.json` (используется Claude Code в WSL и headless-окружениях). Если файла нет — читает токен через **libsecret** (GNOME Keyring / KWallet).
 
-**Установка `secret-tool`:**
+```bash
+# Проверить файловые креденшалы:
+cat ~/.claude/.credentials.json 2>/dev/null \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK — token expires:', d['claudeAiOauth'].get('expiresAt', '?'))"
+```
+
+Если файла нет — установите `secret-tool` для keyring:
 
 ```bash
 # Ubuntu / Debian
@@ -198,37 +204,18 @@ sudo pacman -S libsecret
 ```
 
 ```bash
-# Команда, которую использует скрипт:
-secret-tool lookup service "Claude Code-credentials"
-```
-
-Проверить вручную:
-
-```bash
+# Проверить через keyring:
 secret-tool lookup service "Claude Code-credentials" 2>/dev/null \
   | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK — token expires:', d['claudeAiOauth'].get('expiresAt', '?'))"
-```
-
-**Headless Linux / SSH (без keyring):**
-
-Если keyring недоступен, Claude Code может использовать файловое хранилище. Проверьте:
-
-```bash
-cat ~/.claude/.credentials 2>/dev/null \
-  | python3 -c "import sys,json; json.load(sys.stdin); print('OK — file-based credentials found')"
-```
-
-Если токен в файле — замените Linux-ветку в `fetch_usage()`:
-
-```bash
-cred_json=$(cat "$HOME/.claude/.credentials" 2>/dev/null)
 ```
 
 ### Windows — Git Bash / MSYS2
 
 Токен хранится в **Windows Credential Manager**. Скрипт читает его через PowerShell.
 
-**Требуется PowerShell-модуль:**
+Скрипт сначала проверяет файл `~/.claude/.credentials.json`. Если файла нет — читает токен из **Windows Credential Manager** через PowerShell.
+
+Для чтения через Credential Manager требуется PowerShell-модуль:
 
 ```powershell
 # Запустите PowerShell от администратора:
@@ -258,14 +245,13 @@ cat "$APPDATA/claude/.credentials" 2>/dev/null \
 
 ### Windows — WSL
 
-В WSL Claude Code ведёт себя как Linux — используйте **инструкции для Linux** выше.
+В WSL Claude Code хранит токен в файле `~/.claude/.credentials.json` (не в libsecret и не в Credential Manager). Скрипт читает его автоматически — **дополнительная настройка не требуется**.
 
-Если Claude Code установлен на стороне Windows, а statusline запускается из WSL:
+Проверить вручную:
 
 ```bash
-# Достать токен из Windows Credential Manager через WSL:
-cred_json=$(/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command \
-  '[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String((Get-StoredCredential -Target "Claude Code-credentials" -AsCredentialObject).Password))' 2>/dev/null)
+cat ~/.claude/.credentials.json 2>/dev/null \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK — token expires:', d['claudeAiOauth'].get('expiresAt', '?'))"
 ```
 
 ### Устранение проблем
@@ -370,7 +356,7 @@ rm ~/.claude/statusline.sh ~/.claude/.usage-cache.json
 | Weekly limit | `W:87%` | Remaining 7-day usage quota |
 | Project | `my-app` | Current directory name |
 | Git branch | `git:(main)` | Active branch (hidden outside git repos) |
-| MCP servers | `3 MCPs` | Connected MCP server count (hidden if 0) |
+| MCP servers | `3 MCPs` | Connected MCP server count, read from plugin cache (hidden if 0) |
 | Session time | `⏱ 12m` | Session duration |
 
 Color coding: 🟢 > 50% — 🟡 20–50% — 🔴 < 20%.
@@ -380,13 +366,13 @@ Color coding: 🟢 > 50% — 🟡 20–50% — 🔴 < 20%.
 ### Quick (from GitHub)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AndyShaman/claude-statusline/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/SfilD/claude-statusline/main/install.sh | bash
 ```
 
 ### Manual
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AndyShaman/claude-statusline/main/statusline.sh -o ~/.claude/statusline.sh
+curl -fsSL https://raw.githubusercontent.com/SfilD/claude-statusline/main/statusline.sh -o ~/.claude/statusline.sh
 chmod +x ~/.claude/statusline.sh
 ```
 
@@ -407,7 +393,7 @@ Restart Claude Code.
 
 | Package | Purpose | macOS | Linux | Windows |
 |---------|---------|-------|-------|---------|
-| `jq` | JSON parsing | `brew install jq` | `sudo apt install jq` | included in Git Bash |
+| `jq` | JSON parsing | `brew install jq` | `sudo apt install jq` | `winget install jq` |
 | `python3` | Time calculations | preinstalled | preinstalled | `winget install python` |
 | `curl` | API requests | preinstalled | preinstalled | included in Git Bash |
 
@@ -436,11 +422,13 @@ Percentage shows **remaining** capacity (100% = full, 0% = limit reached). Time 
 | **macOS** | Keychain Access | `security find-generic-password -s "Claude Code-credentials" -w` |
 | **Linux** | libsecret (GNOME Keyring / KWallet) | `secret-tool lookup service "Claude Code-credentials"` |
 | **Windows** (Git Bash) | Credential Manager | `powershell.exe ... Get-StoredCredential -Target "Claude Code-credentials"` |
-| **WSL** | Same as Linux | `secret-tool lookup service "Claude Code-credentials"` |
+| **WSL** | Credentials file | `cat ~/.claude/.credentials.json` |
 
-> **Linux requires** `libsecret-tools` — `sudo apt install libsecret-tools`
+> **Linux**: script checks `~/.claude/.credentials.json` first, then falls back to `secret-tool` (requires `sudo apt install libsecret-tools`)
 >
-> **Windows requires** the `CredentialManager` PowerShell module — `Install-Module -Name CredentialManager -Force`
+> **Windows**: script checks `~/.claude/.credentials.json` first, then falls back to Credential Manager (requires `Install-Module -Name CredentialManager -Force`)
+>
+> **WSL**: Claude Code stores the token in `~/.claude/.credentials.json` — no additional setup needed
 
 Verify your token is accessible:
 

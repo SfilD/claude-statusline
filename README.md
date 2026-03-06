@@ -8,10 +8,16 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/SfilD/claude-statusline/blob/main/LICENSE"><img src="https://img.shields.io/github/license/SfilD/claude-statusline?style=flat-square&color=green" alt="License"></a>
+  <a href="https://github.com/AndyShaman/claude-statusline/blob/main/LICENSE"><img src="https://img.shields.io/github/license/AndyShaman/claude-statusline?style=flat-square&color=green" alt="License"></a>
   <img src="https://img.shields.io/badge/bash-script-4EAA25?style=flat-square&logo=gnubash&logoColor=white" alt="Bash">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-blue?style=flat-square" alt="Platform">
-  <a href="https://github.com/SfilD/claude-statusline/stargazers"><img src="https://img.shields.io/github/stars/SfilD/claude-statusline?style=flat-square&color=yellow" alt="Stars"></a>
+  <a href="https://github.com/AndyShaman/claude-statusline/stargazers"><img src="https://img.shields.io/github/stars/AndyShaman/claude-statusline?style=flat-square&color=yellow" alt="Stars"></a>
+</p>
+
+<p align="center">
+  <a href="https://t.me/AI_Handler"><img src="https://img.shields.io/badge/Telegram-Author's_Channel-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram"></a>
+  &nbsp;
+  <a href="https://www.youtube.com/channel/UCLkP6wuW_P2hnagdaZMBtCw"><img src="https://img.shields.io/badge/YouTube-Author's_Channel-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube"></a>
 </p>
 
 ---
@@ -40,13 +46,13 @@ Color coding: 🟢 > 50% - 🟡 20-50% - 🔴 < 20%.
 ### Quick (from GitHub)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SfilD/claude-statusline/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/AndyShaman/claude-statusline/main/install.sh | bash
 ```
 
 ### Manual
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SfilD/claude-statusline/main/statusline.sh -o ~/.claude/statusline.sh
+curl -fsSL https://raw.githubusercontent.com/AndyShaman/claude-statusline/main/statusline.sh -o ~/.claude/statusline.sh
 chmod +x ~/.claude/statusline.sh
 ```
 
@@ -183,14 +189,14 @@ If you use an API key without OAuth:
 **macOS / Linux / WSL:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SfilD/claude-statusline/main/statusline.sh \
+curl -fsSL https://raw.githubusercontent.com/AndyShaman/claude-statusline/main/statusline.sh \
   -o ~/.claude/statusline.sh
 ```
 
 **Windows (PowerShell 7):**
 
 ```powershell
-curl.exe -fsSL https://raw.githubusercontent.com/SfilD/claude-statusline/main/statusline.sh `
+curl.exe -fsSL https://raw.githubusercontent.com/AndyShaman/claude-statusline/main/statusline.sh `
   -o "$env:USERPROFILE\.claude\statusline.sh"
 
 (Get-Content "$env:USERPROFILE\.claude\statusline.sh" -Raw) `
@@ -211,4 +217,6 @@ Or inside Claude Code: `/statusline remove it`
 
 ## License
 
-[MIT](LICENSE) - based on [AndyShaman/claude-statusline](https://github.com/AndyShaman/claude-statusline)
+[MIT](LICENSE)
+
+**[@AndyShaman](https://github.com/AndyShaman)** · [claude-statusline](https://github.com/AndyShaman/claude-statusline)

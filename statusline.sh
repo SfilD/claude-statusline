@@ -9,7 +9,16 @@ model_name=$(echo "$input" | jq -r '.model.display_name')
 used_pct=$(echo "$input" | jq -r '.context_window.used_percentage // 0')
 context_size=$(echo "$input" | jq -r '.context_window.context_window_size // 200000')
 transcript=$(echo "$input" | jq -r '.transcript_path' | sed 's|\\|/|g')
-mcps=$(find "$HOME/.claude/plugins/cache" -name ".mcp.json" -exec cat {} + 2>/dev/null | jq -s '[.[] | keys[]] | length' 2>/dev/null || echo 0)
+mcps=$({
+    # User-configured MCP servers from settings files
+    for f in "$HOME/.claude/settings.json" "$HOME/.claude/settings.local.json" \
+             "$project_dir/.claude/settings.json" "$project_dir/.claude/settings.local.json"; do
+        [ -f "$f" ] && jq -r '.mcpServers // {} | keys[]' "$f" 2>/dev/null
+    done
+    # Plugin-provided MCP servers from installed plugin cache
+    find "$HOME/.claude/plugins/cache" -name ".mcp.json" -exec jq -r 'keys[]' {} \; 2>/dev/null
+} | sort -u | wc -l)
+mcps=$((mcps + 0))  # ensure numeric
 
 # === Git branch ===
 cd "$current_dir" 2>/dev/null || cd "$project_dir" 2>/dev/null
@@ -28,7 +37,13 @@ try:
     prev_ts = None
     session_start = None
     GAP = timedelta(minutes=30)
-    with open(sys.argv[1], encoding='utf-8') as f:
+    filepath = sys.argv[1]
+    size = __import__('os').path.getsize(filepath)
+    with open(filepath, encoding='utf-8', errors='replace') as f:
+        # For large files, seek to last 500KB (covers even multi-hour sessions)
+        if size > 500000:
+            f.seek(size - 500000)
+            f.readline()  # skip partial line after seek
         for line in f:
             try:
                 ts_str = json.loads(line).get("timestamp")
